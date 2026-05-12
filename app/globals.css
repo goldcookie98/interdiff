@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #0d1117;
+  --navy-light: #161b22;
+  --navy-mid: #1a2234;
+  --cream: #f0e6d3;
+  --gold: #c9a84c;
+  --gold-light: #e4c76b;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  html, body {
+    background-color: var(--navy);
+    color: var(--cream);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  ::selection {
+    background: rgba(201, 168, 76, 0.3);
+    color: var(--cream);
+  }
+
+  .katex { color: var(--cream) !important; }
+  .katex-preview .katex { font-size: 1.25rem; }
+}
+
+@layer components {
+  .btn-gold {
+    @apply font-semibold px-6 py-3 rounded-xl
+      hover:opacity-90 transition-all duration-200
+      active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed;
+    background-color: var(--gold);
+    color: var(--navy);
+    font-family: 'Playfair Display', serif;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 rounded-xl
+      hover:bg-white/5 transition-all duration-200
+      active:scale-95;
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold);
+    font-family: 'Playfair Display', serif;
+  }
+
+  .card {
+    @apply rounded-2xl p-6;
+    background-color: var(--navy-light);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .question-card {
+    @apply rounded-2xl p-6 shadow-xl;
+    background-color: var(--navy-light);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .math-key {
+    @apply rounded-lg py-2 px-1 text-sm font-mono text-center
+      active:scale-95 transition-all duration-100 cursor-pointer
+      min-h-[40px] flex items-center justify-center;
+    background-color: var(--navy);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--cream);
+  }
+
+  .math-key:hover {
+    background-color: rgba(255,255,255,0.08);
+    border-color: rgba(201,168,76,0.4);
+  }
+}
+
+@layer utilities {
+  .text-gold    { color: var(--gold); }
+  .text-cream   { color: var(--cream); }
+  .bg-navy      { background-color: var(--navy); }
+  .bg-navy-light{ background-color: var(--navy-light); }
+  .bg-navy-mid  { background-color: var(--navy-mid); }
+  .bg-gold      { background-color: var(--gold); }
+  .border-gold  { border-color: var(--gold); }
+  .text-navy    { color: var(--navy); }
+
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in { animation: slide-in 0.4s ease forwards; }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.4s ease forwards; }
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+  50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0.15); }
+}
+.animate-pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
