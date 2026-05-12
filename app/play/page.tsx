@@ -3,7 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
-import { generateQuestions, type Question, type Difficulty } from '@/lib/questions'
+import { generateQuestions, type Question, type Difficulty, type GameOptions } from '@/lib/questions'
 import { checkAnswer } from '@/lib/answerCheck'
 import { db } from '@/lib/firebase'
 import { collection, addDoc } from 'firebase/firestore'
@@ -21,9 +21,9 @@ interface Result {
 }
 
 const DIFF_CONFIG = {
-  easy:   { label: 'Easy',   desc: 'Power rule, basic trig, e^x, ln(x)',       color: 'emerald' },
+  easy:   { label: 'Easy',   desc: 'Power rule, e^x, ln(x), trig basics',      color: 'emerald' },
   medium: { label: 'Medium', desc: 'Chain rule, product rule, substitution',    color: 'amber'   },
-  hard:   { label: 'Hard',   desc: 'By parts, partial fractions, trig sub',     color: 'red'     },
+  hard:   { label: 'Hard',   desc: 'By parts, partial fractions, implicit',     color: 'red'     },
 }
 
 function CorrectAnswerDisplay({ latex }: { latex: string }) {
@@ -40,6 +40,7 @@ function CorrectAnswerDisplay({ latex }: { latex: string }) {
 export default function PlayPage() {
   const [phase, setPhase] = useState<Phase>('select')
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
+  const [noTrig, setNoTrig] = useState(false)
   const [questions, setQuestions] = useState<Question[]>([])
   const [qIndex, setQIndex] = useState(0)
   const [answer, setAnswer] = useState('')
@@ -55,7 +56,7 @@ export default function PlayPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(false)
 
   const startGame = useCallback(() => {
-    const qs = generateQuestions(difficulty, 10)
+    const qs = generateQuestions(difficulty, 10, { noTrig } as GameOptions)
     setQuestions(qs)
     setQIndex(0)
     setResults([])
@@ -65,7 +66,7 @@ export default function PlayPage() {
     setGameStartMs(now)
     setQStartMs(now)
     setPhase('game')
-  }, [difficulty])
+  }, [difficulty, noTrig])
 
   const handleSubmit = useCallback(() => {
     if (!answer.trim()) return
@@ -177,6 +178,30 @@ export default function PlayPage() {
               )
             })}
           </div>
+
+          {/* Options */}
+          <button
+            onClick={() => setNoTrig(v => !v)}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 ${
+              noTrig
+                ? 'border-gold/50 bg-gold/10'
+                : 'border-white/10 bg-white/3 hover:bg-white/5'
+            }`}
+          >
+            <div>
+              <div className={`font-serif text-base font-semibold ${noTrig ? 'text-gold' : 'text-cream/70'}`}>
+                No trig
+              </div>
+              <div className="text-cream/40 text-xs font-mono mt-0.5">
+                Only algebra, exponentials &amp; logarithms
+              </div>
+            </div>
+            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+              noTrig ? 'bg-gold border-gold' : 'border-white/30'
+            }`}>
+              {noTrig && <span className="text-navy text-xs font-bold">✓</span>}
+            </div>
+          </button>
 
           <button onClick={startGame} className="btn-gold w-full text-xl py-4">
             Begin

@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { collection, query, orderBy, limit, onSnapshot, where } from 'firebase/firestore'
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Difficulty } from '@/lib/questions'
 
@@ -32,48 +32,61 @@ function formatTime(ms: number): string {
 
 export default function Leaderboard({ highlightId, defaultDifficulty = 'easy', compact = false }: LeaderboardProps) {
   const [tab, setTab] = useState<Difficulty>(defaultDifficulty)
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
+  const [allEntries, setAllEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [newIds, setNewIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     setLoading(true)
+    setError(null)
+
+    // Query without 'where' to avoid needing a composite index.
+    // Filter by difficulty client-side.
     const q = query(
       collection(db, 'leaderboard'),
-      where('difficulty', '==', tab),
       orderBy('score', 'desc'),
-      limit(20)
+      limit(200)
     )
-    const unsub = onSnapshot(q, snapshot => {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardEntry))
 
-      // Detect new entries for animation
-      const incoming = new Set(docs.map(d => d.id))
-      setNewIds(prev => {
-        const added = new Set<string>()
-        incoming.forEach(id => { if (!prev.has(id)) added.add(id) })
-        return incoming
-      })
+    const unsub = onSnapshot(
+      q,
+      snapshot => {
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardEntry))
 
-      setEntries(docs)
-      setLoading(false)
-    }, () => setLoading(false))
+        setNewIds(prev => {
+          const added = new Set<string>()
+          docs.forEach(d => { if (!prev.has(d.id)) added.add(d.id) })
+          return added
+        })
+
+        setAllEntries(docs)
+        setLoading(false)
+      },
+      err => {
+        console.error('Firestore error:', err)
+        setError('Could not load leaderboard.')
+        setLoading(false)
+      }
+    )
 
     return () => unsub()
-  }, [tab])
+  }, [])
+
+  const entries = allEntries
+    .filter(e => e.difficulty === tab)
+    .slice(0, 20)
 
   return (
     <div className="w-full">
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 bg-navy-light/50 rounded-lg p-1">
+      <div className="flex gap-1 mb-4 bg-white/5 rounded-lg p-1">
         {DIFF_TABS.map(d => (
           <button
             key={d}
             onClick={() => setTab(d)}
             className={`flex-1 py-2 px-3 rounded-md text-sm font-mono capitalize transition-all ${
-              tab === d
-                ? 'bg-gold text-navy font-semibold'
-                : 'text-cream/60 hover:text-cream'
+              tab === d ? 'bg-gold text-navy font-semibold' : 'text-cream/60 hover:text-cream'
             }`}
           >
             {d}
@@ -81,57 +94,60 @@ export default function Leaderboard({ highlightId, defaultDifficulty = 'easy', c
         ))}
       </div>
 
-      {/* Table */}
-      {loading ? (
+      {error && (
+        <div className="text-center text-red-400 py-6 text-sm font-mono">{error}</div>
+      )}
+
+      {loading && !error && (
         <div className="text-center text-cream/40 py-10 font-mono text-sm animate-pulse">
-          Loading leaderboard…
+          Loading…
         </div>
-      ) : entries.length === 0 ? (
+      )}
+
+      {!loading && !error && entries.length === 0 && (
         <div className="text-center text-cream/40 py-10 font-serif text-sm">
-          No scores yet. Be the first!
+          No scores yet for {tab}. Be the first!
         </div>
-      ) : (
+      )}
+
+      {!loading && !error && entries.length > 0 && (
         <div className="space-y-1">
           {entries.map((entry, i) => {
             const isHighlight = entry.id === highlightId
-            const isNew = newIds.has(entry.id) && i < 3
+            const isNew = newIds.has(entry.id)
 
             return (
               <div
                 key={entry.id}
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-500
-                  ${isHighlight ? 'bg-gold/15 border border-gold/40' : 'bg-navy-light/40 border border-white/5'}
+                  ${isHighlight ? 'border border-gold/40' : 'border border-white/5'}
                   ${isNew ? 'animate-slide-in' : ''}
-                  ${!compact && 'hover:bg-white/5'}
                 `}
+                style={{
+                  backgroundColor: isHighlight ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
+                }}
               >
-                {/* Rank */}
-                <span className={`
-                  w-6 text-center text-sm font-mono flex-shrink-0
-                  ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-cream/40'}
-                `}>
+                <span className={`w-6 text-center text-sm font-mono flex-shrink-0 ${
+                  i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-cream/40'
+                }`}>
                   {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
                 </span>
 
-                {/* Name */}
                 <span className={`flex-1 font-serif text-sm truncate ${isHighlight ? 'text-gold' : 'text-cream'}`}>
                   {entry.name}
                   {isHighlight && <span className="ml-2 text-xs text-gold/70 font-mono">(you)</span>}
                 </span>
 
-                {/* Score */}
                 <span className="font-mono text-sm text-gold font-semibold w-20 text-right flex-shrink-0">
                   {Math.round(entry.score).toLocaleString()}
                 </span>
 
                 {!compact && (
                   <>
-                    {/* Correct */}
                     <span className="font-mono text-xs text-cream/50 w-12 text-right flex-shrink-0">
                       {entry.correct}/10
                     </span>
-                    {/* Time */}
                     <span className="font-mono text-xs text-cream/40 w-16 text-right flex-shrink-0">
                       {formatTime(entry.totalTimeMs)}
                     </span>
