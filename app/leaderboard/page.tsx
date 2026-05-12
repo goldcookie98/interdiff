@@ -8,7 +8,7 @@ export default function LeaderboardPage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="text-cream/40 text-sm font-mono hover:text-cream/70 transition-colors">
-            ← InteDiff
+            ← InterDiff
           </Link>
           <h1 className="font-serif text-4xl font-bold text-cream mt-4">Leaderboard</h1>
           <p className="text-cream/50 font-serif italic">Top 20 scores per difficulty — live</p>

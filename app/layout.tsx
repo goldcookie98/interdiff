@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'InteDiff — Calculus Practice',
+  title: 'InterDiff — Calculus Practice',
   description: 'Timed integration and differentiation practice with live leaderboard',
 }
 

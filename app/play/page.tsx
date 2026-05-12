@@ -133,7 +133,7 @@ export default function PlayPage() {
         <div className="max-w-lg w-full space-y-8 animate-fade-in">
           <div className="text-center">
             <Link href="/" className="text-cream/40 text-sm font-mono hover:text-cream/70 transition-colors">
-              ← InteDiff
+              ← InterDiff
             </Link>
             <h1 className="font-serif text-4xl font-bold text-cream mt-4 mb-2">Sprint 10</h1>
             <p className="text-cream/60 font-serif italic">10 questions · timed · no mercy</p>

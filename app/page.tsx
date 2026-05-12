@@ -16,7 +16,7 @@ export default function Home() {
             ∫ · d/dx
           </div>
           <h1 className="font-serif text-6xl sm:text-7xl font-bold text-cream mb-3">
-            Inte<span className="text-gold">Diff</span>
+            Inter<span className="text-gold">Diff</span>
           </h1>
           <p className="font-serif text-cream/60 text-xl italic">
             Master calculus under pressure
