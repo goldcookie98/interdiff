@@ -1,7 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
 import type { Difficulty } from '@/lib/questions'
 
 interface LeaderboardEntry {
@@ -38,56 +36,66 @@ export default function Leaderboard({ highlightId, defaultDifficulty = 'easy', c
   const [newIds, setNewIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
+    let unsub: (() => void) | undefined
 
-    // Query without 'where' to avoid needing a composite index.
-    // Filter by difficulty client-side.
-    const q = query(
-      collection(db, 'leaderboard'),
-      orderBy('score', 'desc'),
-      limit(200)
-    )
+    async function subscribe() {
+      try {
+        const { db } = await import('@/lib/firebase')
+        const { collection, query, orderBy, limit, onSnapshot } = await import('firebase/firestore')
 
-    const unsub = onSnapshot(
-      q,
-      snapshot => {
-        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardEntry))
+        if (!db) throw new Error('Firebase not initialised')
 
-        setNewIds(prev => {
-          const added = new Set<string>()
-          docs.forEach(d => { if (!prev.has(d.id)) added.add(d.id) })
-          return added
-        })
+        const q = query(
+          collection(db, 'leaderboard'),
+          orderBy('score', 'desc'),
+          limit(200)
+        )
 
-        setAllEntries(docs)
-        setLoading(false)
-      },
-      err => {
-        console.error('Firestore error:', err)
-        setError('Could not load leaderboard.')
+        unsub = onSnapshot(
+          q,
+          snapshot => {
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardEntry))
+            setNewIds(prev => {
+              const added = new Set<string>()
+              docs.forEach(d => { if (!prev.has(d.id)) added.add(d.id) })
+              return added
+            })
+            setAllEntries(docs)
+            setLoading(false)
+          },
+          err => {
+            console.error('Firestore onSnapshot error:', err)
+            setError(`Firestore: ${err.message}`)
+            setLoading(false)
+          }
+        )
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e)
+        console.error('Leaderboard setup error:', msg)
+        setError(`Could not connect: ${msg}`)
         setLoading(false)
       }
-    )
+    }
 
-    return () => unsub()
+    subscribe()
+    return () => unsub?.()
   }, [])
 
-  const entries = allEntries
-    .filter(e => e.difficulty === tab)
-    .slice(0, 20)
+  const entries = allEntries.filter(e => e.difficulty === tab).slice(0, 20)
 
   return (
     <div className="w-full">
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 bg-white/5 rounded-lg p-1">
+      <div className="flex gap-1 mb-4 rounded-lg p-1" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
         {DIFF_TABS.map(d => (
           <button
             key={d}
+            type="button"
             onClick={() => setTab(d)}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-mono capitalize transition-all ${
-              tab === d ? 'bg-gold text-navy font-semibold' : 'text-cream/60 hover:text-cream'
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-mono capitalize transition-all cursor-pointer ${
+              tab === d ? 'font-semibold' : 'text-cream/60 hover:text-cream'
             }`}
+            style={tab === d ? { backgroundColor: 'var(--gold)', color: 'var(--navy)' } : undefined}
           >
             {d}
           </button>
@@ -95,13 +103,11 @@ export default function Leaderboard({ highlightId, defaultDifficulty = 'easy', c
       </div>
 
       {error && (
-        <div className="text-center text-red-400 py-6 text-sm font-mono">{error}</div>
+        <div className="text-center text-red-400 py-6 text-xs font-mono break-all px-2">{error}</div>
       )}
 
       {loading && !error && (
-        <div className="text-center text-cream/40 py-10 font-mono text-sm animate-pulse">
-          Loading…
-        </div>
+        <div className="text-center text-cream/40 py-10 font-mono text-sm animate-pulse">Loading…</div>
       )}
 
       {!loading && !error && entries.length === 0 && (
@@ -115,18 +121,13 @@ export default function Leaderboard({ highlightId, defaultDifficulty = 'easy', c
           {entries.map((entry, i) => {
             const isHighlight = entry.id === highlightId
             const isNew = newIds.has(entry.id)
-
             return (
               <div
                 key={entry.id}
-                className={`
-                  flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-500
-                  ${isHighlight ? 'border border-gold/40' : 'border border-white/5'}
-                  ${isNew ? 'animate-slide-in' : ''}
-                `}
-                style={{
-                  backgroundColor: isHighlight ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
-                }}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-500 border ${
+                  isHighlight ? 'border-gold/40' : 'border-white/5'
+                } ${isNew ? 'animate-slide-in' : ''}`}
+                style={{ backgroundColor: isHighlight ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)' }}
               >
                 <span className={`w-6 text-center text-sm font-mono flex-shrink-0 ${
                   i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : i === 2 ? 'text-amber-600' : 'text-cream/40'
@@ -139,7 +140,7 @@ export default function Leaderboard({ highlightId, defaultDifficulty = 'easy', c
                   {isHighlight && <span className="ml-2 text-xs text-gold/70 font-mono">(you)</span>}
                 </span>
 
-                <span className="font-mono text-sm text-gold font-semibold w-20 text-right flex-shrink-0">
+                <span className="font-mono text-sm font-semibold w-20 text-right flex-shrink-0 text-gold">
                   {Math.round(entry.score).toLocaleString()}
                 </span>
 

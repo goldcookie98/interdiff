@@ -160,9 +160,23 @@ export default function MathInput({ value, onChange, onSubmit, placeholder }: Ma
     setTimeout(() => { input?.focus(); input?.setSelectionRange(newPos, newPos) }, 0)
   }, [value, onChange])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); onSubmit?.() }
-    if (e.key === 'Backspace') { e.preventDefault(); backspace() }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') { e.preventDefault(); onSubmit?.(); return }
+    if (e.key === 'Backspace') { e.preventDefault(); backspace(); return }
+
+    // Intercept ^ — insert ^{} and place cursor inside the braces
+    if (e.key === '^') {
+      e.preventDefault()
+      const input = inputRef.current
+      const pos = input ? (input.selectionStart ?? value.length) : value.length
+      const newVal = value.slice(0, pos) + '^{}' + value.slice(pos)
+      onChange(newVal)
+      const cursorInside = pos + 2  // after ^{, before }
+      setTimeout(() => {
+        input?.focus()
+        input?.setSelectionRange(cursorInside, cursorInside)
+      }, 0)
+    }
   }
 
   return (
