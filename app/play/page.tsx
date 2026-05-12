@@ -34,22 +34,6 @@ function CorrectAnswerDisplay({ latex }: { latex: string }) {
   return <span ref={ref} className="inline-block" />
 }
 
-function useElapsedTimer(running: boolean) {
-  const [elapsed, setElapsed] = useState(0)
-  const startRef = useRef(0)
-
-  useEffect(() => {
-    if (!running) return
-    startRef.current = Date.now()
-    setElapsed(0)
-    const id = setInterval(() => {
-      setElapsed(Date.now() - startRef.current)
-    }, 100)
-    return () => clearInterval(id)
-  }, [running])
-
-  return elapsed
-}
 
 function formatElapsed(ms: number) {
   const s = Math.floor(ms / 1000)
@@ -75,9 +59,16 @@ export default function PlayPage() {
 
   const gameStartRef = useRef(0)
   const qStartRef = useRef(0)
+  const [elapsed, setElapsed] = useState(0)
 
-  const timerRunning = phase === 'game' && !feedback
-  const elapsed = useElapsedTimer(timerRunning)
+  // Single interval for the whole game — not affected by feedback state
+  useEffect(() => {
+    if (phase !== 'game') return
+    const id = setInterval(() => {
+      setElapsed(Date.now() - gameStartRef.current)
+    }, 100)
+    return () => clearInterval(id)
+  }, [phase])
 
   const startGame = () => {
     setStartError(null)
