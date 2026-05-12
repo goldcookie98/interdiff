@@ -19,9 +19,9 @@ interface Result {
 }
 
 const DIFF_CONFIG: Record<Difficulty, { label: string; desc: string; color: string; textColor: string }> = {
-  easy:   { label: 'Easy',   desc: 'Power rule, e^x, ln(x), trig basics',   color: 'border-emerald-500/50 bg-emerald-500/10', textColor: 'text-emerald-400' },
-  medium: { label: 'Medium', desc: 'Chain rule, product rule, substitution', color: 'border-amber-500/50 bg-amber-500/10',     textColor: 'text-amber-400'   },
-  hard:   { label: 'Hard',   desc: 'By parts, partial fractions, implicit',  color: 'border-red-500/50 bg-red-500/10',         textColor: 'text-red-400'     },
+  easy:   { label: 'Easy',   desc: 'Single term — e.g. 3x⁵',              color: 'border-emerald-500/50 bg-emerald-500/10', textColor: 'text-emerald-400' },
+  medium: { label: 'Medium', desc: 'Two terms — e.g. 4x³ + 2x',           color: 'border-amber-500/50 bg-amber-500/10',     textColor: 'text-amber-400'   },
+  hard:   { label: 'Hard',   desc: 'Three terms — e.g. 5x⁶ + 3x² + 7',   color: 'border-red-500/50 bg-red-500/10',         textColor: 'text-red-400'     },
 }
 
 function CorrectAnswerDisplay({ latex }: { latex: string }) {
@@ -60,7 +60,6 @@ function formatElapsed(ms: number) {
 export default function PlayPage() {
   const [phase, setPhase] = useState<Phase>('select')
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
-  const [noTrig, setNoTrig] = useState(false)
   const [questions, setQuestions] = useState<Question[]>([])
   const [qIndex, setQIndex] = useState(0)
   const [answer, setAnswer] = useState('')
@@ -83,7 +82,7 @@ export default function PlayPage() {
   const startGame = () => {
     setStartError(null)
     try {
-      const qs = generateQuestions(difficulty, 10, { noTrig })
+      const qs = generateQuestions(difficulty, 10)
       setQuestions(qs)
       setQIndex(0)
       setResults([])
@@ -190,31 +189,7 @@ export default function PlayPage() {
             })}
           </div>
 
-          {/* No trig toggle */}
-          <button
-            type="button"
-            onClick={() => setNoTrig(v => !v)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 cursor-pointer ${
-              noTrig ? 'border-gold/50' : 'border-white/10 hover:border-white/20'
-            }`}
-            style={{ backgroundColor: noTrig ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.02)' }}
-          >
-            <div className="text-left">
-              <div className={`font-serif text-base font-semibold ${noTrig ? 'text-gold' : 'text-cream/70'}`}>
-                No trig
-              </div>
-              <div className="text-cream/40 text-xs font-mono mt-0.5">
-                Only algebra, exponentials &amp; logarithms
-              </div>
-            </div>
-            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-              noTrig ? 'border-gold' : 'border-white/30'
-            }`} style={{ backgroundColor: noTrig ? 'var(--gold)' : undefined }}>
-              {noTrig && <span className="text-navy text-xs font-bold leading-none">✓</span>}
-            </div>
-          </button>
-
-          {startError && (
+{startError && (
             <p className="text-red-400 text-sm font-mono text-center">{startError}</p>
           )}
 
