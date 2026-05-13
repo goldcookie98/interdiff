@@ -4,7 +4,7 @@ service cloud.firestore {
     match /leaderboard/{doc} {
       allow read: if true;
       allow create, update: if true;
-      allow delete: if false;
+      allow delete: if request.auth != null;
     }
   }
 }

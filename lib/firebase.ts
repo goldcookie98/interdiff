@@ -1,5 +1,6 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app'
 import { getFirestore, type Firestore } from 'firebase/firestore'
+import { getAuth, type Auth } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,15 +14,17 @@ const firebaseConfig = {
 
 let app: FirebaseApp
 let db: Firestore
+let auth: Auth
 
 try {
   app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
   db = getFirestore(app)
+  auth = getAuth(app)
 } catch (e) {
   console.error('Firebase init failed:', e)
-  // Provide a dummy db so imports don't crash — Firestore calls will fail gracefully
   app = getApps()[0]
   db = null as unknown as Firestore
+  auth = null as unknown as Auth
 }
 
-export { db }
+export { db, auth }
