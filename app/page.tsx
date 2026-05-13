@@ -74,6 +74,11 @@ export default function Home() {
         <p className="text-cream/25 text-xs font-mono pt-4">
           No account needed · Powered by Firebase
         </p>
+        <div className="pt-2">
+          <Link href="/admin" className="text-cream/20 text-xs font-mono hover:text-cream/40 transition-colors">
+            admin
+          </Link>
+        </div>
       </div>
     </main>
   )
