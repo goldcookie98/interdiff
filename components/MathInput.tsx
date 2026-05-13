@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import katex from 'katex'
 import 'katex/dist/katex.min.css'
 
@@ -8,6 +8,7 @@ interface MathInputProps {
   onChange: (latex: string) => void
   onSubmit?: () => void
   placeholder?: string
+  autoFocus?: boolean
 }
 
 type PaletteSection = {
@@ -100,9 +101,20 @@ const PALETTE: PaletteSection[] = [
   },
 ]
 
-export default function MathInput({ value, onChange, onSubmit, placeholder }: MathInputProps) {
+export interface MathInputHandle {
+  focus: () => void
+}
+
+const MathInput = forwardRef<MathInputHandle, MathInputProps>(function MathInput(
+  { value, onChange, onSubmit, placeholder, autoFocus },
+  ref
+) {
   const previewRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current?.focus(),
+  }))
   const [showPalette, setShowPalette] = useState(true)
   const [activeSection, setActiveSection] = useState(0)
   const [, setCursorPos] = useState<number>(0)
@@ -198,6 +210,8 @@ export default function MathInput({ value, onChange, onSubmit, placeholder }: Ma
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          autoFocus={autoFocus}
         />
       </div>
 
@@ -261,4 +275,6 @@ export default function MathInput({ value, onChange, onSubmit, placeholder }: Ma
       )}
     </div>
   )
-}
+})
+
+export default MathInput

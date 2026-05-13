@@ -6,7 +6,7 @@ import 'katex/dist/katex.min.css'
 import { generateQuestions, type Question, type Difficulty } from '@/lib/questions'
 import { checkAnswer } from '@/lib/answerCheck'
 import QuestionCard from '@/components/QuestionCard'
-import MathInput from '@/components/MathInput'
+import MathInput, { type MathInputHandle } from '@/components/MathInput'
 import Leaderboard from '@/components/Leaderboard'
 
 type Phase = 'select' | 'game' | 'result'
@@ -52,15 +52,15 @@ export default function PlayPage() {
   const [totalMs, setTotalMs] = useState(0)
   const [startError, setStartError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [displayName, setDisplayName] = useState('')
   const [leaderboardId, setLeaderboardId] = useState<string | undefined>()
   const [submitted, setSubmitted] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const nameInputRef = useRef<HTMLInputElement>(null)
+  const [isNewBest, setIsNewBest] = useState(false)
+  const [previousScore, setPreviousScore] = useState<number | null>(null)
 
   const gameStartRef = useRef(0)
   const qStartRef = useRef(0)
+  const mathInputRef = useRef<MathInputHandle>(null)
   const [elapsed, setElapsed] = useState(0)
 
   // Single interval for the whole game — not affected by feedback state
@@ -71,6 +71,13 @@ export default function PlayPage() {
     }, 100)
     return () => clearInterval(id)
   }, [phase])
+
+  // Focus the answer box on each new question
+  useEffect(() => {
+    if (phase === 'game' && !feedback) {
+      setTimeout(() => mathInputRef.current?.focus(), 50)
+    }
+  }, [phase, qIndex, feedback])
 
   const startGame = () => {
     setStartError(null)
@@ -115,41 +122,53 @@ export default function PlayPage() {
     }, 1200)
   }, [answer, questions, qIndex, results, feedback])
 
-  const submitScore = async () => {
-    if (!displayName.trim() || submitting) return
-    const correct = results.filter(r => r.correct).length
-    const score = correct * (1000000 / Math.max(totalMs, 1)) * 10
-    setSubmitting(true)
-    setSubmitError(null)
-    try {
-      const { db } = await import('@/lib/firebase')
-      if (!db) throw new Error('Firebase not initialised — check your environment config.')
-      const { collection, addDoc } = await import('firebase/firestore')
-      const doc = await addDoc(collection(db, 'leaderboard'), {
-        name: displayName.trim(),
-        score,
-        correct,
-        totalTimeMs: totalMs,
-        difficulty,
-        createdAt: Date.now(),
-      })
-      setLeaderboardId(doc.id)
-      setSubmitted(true)
-      setShowLeaderboard(true)
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unknown error'
-      console.error('submitScore error:', e)
-      setSubmitError(`Failed to submit: ${msg}`)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  // Auto-focus name input when results screen appears
+  // Auto-submit score when results screen appears
   useEffect(() => {
-    if (phase === 'result') {
-      setTimeout(() => nameInputRef.current?.focus(), 100)
+    if (phase !== 'result' || submitted || submitting) return
+
+    const run = async () => {
+      setSubmitting(true)
+      setSubmitError(null)
+      try {
+        const { db } = await import('@/lib/firebase')
+        if (!db) throw new Error('Firebase not initialised — check your environment config.')
+        const { doc, getDoc, setDoc } = await import('firebase/firestore')
+        const { getUserId, getUsername } = await import('@/lib/user')
+        const userId = getUserId()
+        const username = getUsername() ?? 'Anonymous'
+        const correct = results.filter(r => r.correct).length
+        const score = correct * (1000000 / Math.max(totalMs, 1)) * 10
+        const docId = `${userId}_${difficulty}`
+        const ref = doc(db, 'leaderboard', docId)
+        const existing = await getDoc(ref)
+        const prevScore = existing.exists() ? (existing.data().score as number) : null
+        setPreviousScore(prevScore)
+        const newBest = prevScore === null || score > prevScore
+        setIsNewBest(newBest)
+        if (newBest) {
+          await setDoc(ref, {
+            name: username,
+            score,
+            correct,
+            totalTimeMs: totalMs,
+            difficulty,
+            createdAt: prevScore === null ? Date.now() : existing.data()?.createdAt ?? Date.now(),
+            updatedAt: Date.now(),
+          })
+        }
+        setLeaderboardId(docId)
+        setSubmitted(true)
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown error'
+        console.error('submitScore error:', e)
+        setSubmitError(`Could not save score: ${msg}`)
+      } finally {
+        setSubmitting(false)
+      }
     }
+
+    run()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
   // ─── Select ───────────────────────────────────────────────────────────────
@@ -264,7 +283,7 @@ export default function PlayPage() {
 
           {!feedback && (
             <div className="space-y-4">
-              <MathInput value={answer} onChange={setAnswer} onSubmit={handleSubmit} placeholder="Enter your answer…" />
+              <MathInput ref={mathInputRef} value={answer} onChange={setAnswer} onSubmit={handleSubmit} placeholder="Enter your answer…" autoFocus />
               <button
                 type="button"
                 onClick={handleSubmit}
@@ -307,53 +326,51 @@ export default function PlayPage() {
           </div>
         </div>
 
-        {!submitted ? (
-          <div className="card space-y-4">
-            <h2 className="font-serif text-xl text-cream">Submit to Leaderboard</h2>
-            <div className="flex gap-3">
-              <input
-                ref={nameInputRef}
-                type="text"
-                value={displayName}
-                onChange={e => { setDisplayName(e.target.value); setSubmitError(null) }}
-                onKeyDown={e => e.key === 'Enter' && submitScore()}
-                placeholder="Your display name…"
-                maxLength={24}
-                className="flex-1 rounded-xl px-4 py-3 font-mono placeholder:text-cream/30 focus:outline-none transition-colors"
-                style={{ backgroundColor: 'var(--navy)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--cream)' }}
-              />
-              <button
-                type="button"
-                onClick={submitScore}
-                disabled={!displayName.trim() || submitting}
-                className="px-6 rounded-xl font-semibold transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                style={{ backgroundColor: 'var(--gold)', color: 'var(--navy)' }}
-              >
-                {submitting ? '…' : 'Submit'}
-              </button>
-            </div>
-            {submitError && (
-              <p className="text-red-400 text-sm font-mono mt-2">{submitError}</p>
-            )}
-          </div>
-        ) : (
-          <div className="card text-center" style={{ backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)' }}>
-            <p className="text-emerald-400 font-serif text-lg">Score submitted!</p>
-            <button
-              type="button"
-              onClick={() => setShowLeaderboard(v => !v)}
-              className="text-cream/50 text-sm font-mono mt-2 hover:text-cream transition-colors cursor-pointer"
-            >
-              {showLeaderboard ? 'Hide' : 'Show'} leaderboard
-            </button>
+        {submitting && (
+          <div className="card text-center text-cream/50 font-mono text-sm animate-pulse">
+            Saving score…
           </div>
         )}
 
-        {showLeaderboard && (
-          <div className="card animate-fade-in">
-            <Leaderboard highlightId={leaderboardId} defaultDifficulty={difficulty} compact />
+        {submitted && (
+          <div
+            className="card text-center"
+            style={isNewBest
+              ? { backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)' }
+              : { backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }
+            }
+          >
+            {isNewBest ? (
+              <>
+                <p className="text-emerald-400 font-serif text-lg font-semibold">New personal best!</p>
+                {previousScore !== null && (
+                  <p className="text-emerald-400/60 font-mono text-xs mt-1">
+                    Previous best: {Math.round(previousScore).toLocaleString()}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-cream/70 font-serif text-lg">Not your best this time</p>
+                {previousScore !== null && (
+                  <p className="text-cream/40 font-mono text-xs mt-1">
+                    Your best: {Math.round(previousScore).toLocaleString()}
+                  </p>
+                )}
+              </>
+            )}
           </div>
         )}
+
+        {submitError && (
+          <div className="card">
+            <p className="text-red-400 text-sm font-mono">{submitError}</p>
+          </div>
+        )}
+
+        <div className="card animate-fade-in">
+          <Leaderboard highlightId={leaderboardId} defaultDifficulty={difficulty} compact />
+        </div>
 
         <div className="card space-y-3">
           <h2 className="font-serif text-xl text-cream mb-4">Results Breakdown</h2>
@@ -384,7 +401,7 @@ export default function PlayPage() {
         <div className="flex gap-4">
           <button
             type="button"
-            onClick={() => { setPhase('select'); setSubmitted(false); setShowLeaderboard(false); setSubmitError(null); setDisplayName('') }}
+            onClick={() => { setPhase('select'); setSubmitted(false); setSubmitError(null); setIsNewBest(false); setPreviousScore(null) }}
             className="flex-1 py-3 rounded-xl font-semibold cursor-pointer transition-all active:scale-95"
             style={{ backgroundColor: 'var(--gold)', color: 'var(--navy)', fontFamily: 'Playfair Display, serif' }}
           >
