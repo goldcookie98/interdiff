@@ -390,7 +390,7 @@ function LandingView() {
       if (!snap.exists()) throw new Error('Room not found — check the code and try again')
       const room = snap.data()
       if (room.status === 'playing') throw new Error('Game already in progress')
-      if (room.status === 'finished') throw new Error("This room's game has ended")
+      if (room.status === 'finished') throw new Error('This room&apos;s game has ended')
       router.push(`/room?code=${code}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to join room')
