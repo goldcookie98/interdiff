@@ -329,7 +329,7 @@ export default function PlayPage() {
           <div className="text-cream/50 font-mono text-sm">points</div>
           <div className="flex justify-center gap-8 pt-2">
             <div className="text-center">
-              <div className="font-mono text-2xl text-cream">{correctCount}/10</div>
+              <div className="font-mono text-2xl text-cream">{correctCount}/{results.length}</div>
               <div className="text-cream/40 text-xs font-mono">correct</div>
             </div>
             <div className="text-center">
