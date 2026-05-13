@@ -44,6 +44,7 @@ function formatElapsed(ms: number) {
 export default function PlayPage() {
   const [phase, setPhase] = useState<Phase>('select')
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
+  const [questionCount, setQuestionCount] = useState<number>(10)
   const [questions, setQuestions] = useState<Question[]>([])
   const [qIndex, setQIndex] = useState(0)
   const [answer, setAnswer] = useState('')
