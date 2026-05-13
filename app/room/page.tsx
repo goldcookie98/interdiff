@@ -651,7 +651,6 @@ function RoomView({ code }: { code: string }) {
   const isHost = room.hostId === userId
   const qCount = room.settings.questionCount || 10
   const allDone = Object.values(room.players).length > 0 && Object.values(room.players).every(p => p.done)
-  const waitingCount = Object.values(room.players).filter(p => !p.done).length
 
   // ── Lobby ─────────────────────────────────────────────────────────────────
   if (room.status === 'lobby') {
