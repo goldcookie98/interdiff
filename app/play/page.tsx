@@ -83,7 +83,7 @@ export default function PlayPage() {
   const startGame = () => {
     setStartError(null)
     try {
-      const qs = generateQuestions(difficulty, 10)
+      const qs = generateQuestions(difficulty, questionCount)
       setQuestions(qs)
       setQIndex(0)
       setResults([])
