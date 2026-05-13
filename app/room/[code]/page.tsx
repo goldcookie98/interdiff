@@ -381,7 +381,6 @@ export default function RoomCodePage() {
   // ─── Lobby ────────────────────────────────────────────────────────────────
   if (room.status === 'lobby') {
     const { difficulty, mode } = room.settings
-    const diffCfg = DIFF_CONFIG[difficulty]
 
     return (
       <main className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
