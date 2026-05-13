@@ -109,11 +109,11 @@ function uniquePowers(count: number, minPow: number, maxPow: number): number[] {
 
 // ─── Generate ─────────────────────────────────────────────────────────────────
 
-export function generateQuestions(difficulty: Difficulty, count = 10): Question[] {
+export function generateQuestions(difficulty: Difficulty, count = 10, mode: QuestionMode = 'both'): Question[] {
   const questions: Question[] = []
 
   for (let i = 0; i < count; i++) {
-    const isDiff = Math.random() < 0.5
+    const isDiff = mode === 'differentiation' ? true : mode === 'integration' ? false : Math.random() < 0.5
     let terms: TermSpec[]
 
     if (difficulty === 'easy') {
