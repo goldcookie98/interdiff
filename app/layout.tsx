@@ -11,6 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="antialiased min-h-screen bg-navy text-cream">
         {children}
+        <div className="fixed bottom-3 left-3 text-cream/20 font-mono text-xs select-none pointer-events-none">
+          v0.1.0
+        </div>
       </body>
     </html>
   )

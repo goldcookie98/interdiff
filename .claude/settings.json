@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/jakeharden/intediff && git add -A && git commit -m 'auto-update' && git push 2>/dev/null || true",
+            "statusMessage": "Committing and pushing..."
+          }
+        ]
+      }
+    ]
+  }
+}

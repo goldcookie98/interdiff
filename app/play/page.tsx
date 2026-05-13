@@ -55,7 +55,9 @@ export default function PlayPage() {
   const [displayName, setDisplayName] = useState('')
   const [leaderboardId, setLeaderboardId] = useState<string | undefined>()
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const gameStartRef = useRef(0)
   const qStartRef = useRef(0)
@@ -116,10 +118,12 @@ export default function PlayPage() {
   const submitScore = async () => {
     if (!displayName.trim() || submitting) return
     const correct = results.filter(r => r.correct).length
-    const score = correct * (1000000 / totalMs) * 10
+    const score = correct * (1000000 / Math.max(totalMs, 1)) * 10
     setSubmitting(true)
+    setSubmitError(null)
     try {
       const { db } = await import('@/lib/firebase')
+      if (!db) throw new Error('Firebase not initialised — check your environment config.')
       const { collection, addDoc } = await import('firebase/firestore')
       const doc = await addDoc(collection(db, 'leaderboard'), {
         name: displayName.trim(),
@@ -133,11 +137,20 @@ export default function PlayPage() {
       setSubmitted(true)
       setShowLeaderboard(true)
     } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
       console.error('submitScore error:', e)
+      setSubmitError(`Failed to submit: ${msg}`)
     } finally {
       setSubmitting(false)
     }
   }
+
+  // Auto-focus name input when results screen appears
+  useEffect(() => {
+    if (phase === 'result') {
+      setTimeout(() => nameInputRef.current?.focus(), 100)
+    }
+  }, [phase])
 
   // ─── Select ───────────────────────────────────────────────────────────────
   if (phase === 'select') {
@@ -299,9 +312,10 @@ export default function PlayPage() {
             <h2 className="font-serif text-xl text-cream">Submit to Leaderboard</h2>
             <div className="flex gap-3">
               <input
+                ref={nameInputRef}
                 type="text"
                 value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
+                onChange={e => { setDisplayName(e.target.value); setSubmitError(null) }}
                 onKeyDown={e => e.key === 'Enter' && submitScore()}
                 placeholder="Your display name…"
                 maxLength={24}
@@ -318,6 +332,9 @@ export default function PlayPage() {
                 {submitting ? '…' : 'Submit'}
               </button>
             </div>
+            {submitError && (
+              <p className="text-red-400 text-sm font-mono mt-2">{submitError}</p>
+            )}
           </div>
         ) : (
           <div className="card text-center" style={{ backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)' }}>
@@ -367,7 +384,7 @@ export default function PlayPage() {
         <div className="flex gap-4">
           <button
             type="button"
-            onClick={() => { setPhase('select'); setSubmitted(false); setShowLeaderboard(false) }}
+            onClick={() => { setPhase('select'); setSubmitted(false); setShowLeaderboard(false); setSubmitError(null); setDisplayName('') }}
             className="flex-1 py-3 rounded-xl font-semibold cursor-pointer transition-all active:scale-95"
             style={{ backgroundColor: 'var(--gold)', color: 'var(--navy)', fontFamily: 'Playfair Display, serif' }}
           >
