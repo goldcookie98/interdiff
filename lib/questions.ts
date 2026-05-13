@@ -1,5 +1,6 @@
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type QuestionType = 'differentiate' | 'integrate'
+export type QuestionMode = 'both' | 'integration' | 'differentiation'
 
 export interface Question {
   id: string
