@@ -185,6 +185,22 @@ export default function PlayPage() {
             <p className="text-cream/60 font-serif italic">10 questions · timed · no mercy</p>
           </div>
 
+          <div className="space-y-2">
+            <div className="text-cream/40 text-xs font-mono uppercase tracking-wider">Questions</div>
+            <div className="grid grid-cols-4 gap-2">
+              {[5, 10, 15, 20].map(n => (
+                <button key={n} type="button" onClick={() => setQuestionCount(n)}
+                  className={`py-2 rounded-xl border text-sm font-mono transition-all cursor-pointer ${
+                    questionCount === n
+                      ? 'border-gold/60 bg-gold/15 text-gold'
+                      : 'border-white/10 text-cream/40 hover:border-white/25'
+                  }`}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-3">
             {(Object.keys(DIFF_CONFIG) as Difficulty[]).map(d => {
               const cfg = DIFF_CONFIG[d]
