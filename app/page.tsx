@@ -49,6 +49,9 @@ export default function Home() {
           <Link href="/play" className="btn-gold text-lg px-8 py-4 inline-block">
             Start Sprint 10
           </Link>
+          <Link href="/room" className="btn-outline text-lg px-8 py-4 inline-block">
+            Group Room
+          </Link>
           <Link href="/leaderboard" className="btn-outline text-lg px-8 py-4 inline-block">
             Leaderboard
           </Link>
