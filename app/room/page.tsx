@@ -488,7 +488,8 @@ function RoomView({ code }: { code: string }) {
         const data = snap.data() as RoomDoc
 
         // Backfill missing settings fields (for rooms created before these features)
-        const legacySettings = data.settings as Record<string, unknown>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const legacySettings = data.settings as any
         if (!data.settings.questionType && legacySettings.mode) {
           data.settings.questionType = legacySettings.mode as QuestionMode
         }
