@@ -559,8 +559,6 @@ function RoomView({ code }: { code: string }) {
       const questions = generateQuestions(room.settings.difficulty, count, room.settings.questionType)
 
       const players: Record<string, PlayerState> = {}
-      const playerIds = Object.keys(room.players)
-
       // Auto-assign unassigned players to teams if 2v2
       let t1 = 0, t2 = 0
       for (const [id, p] of Object.entries(room.players)) {
