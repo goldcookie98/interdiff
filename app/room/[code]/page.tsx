@@ -376,7 +376,6 @@ export default function RoomCodePage() {
 
   const isHost = room.hostId === userId
   const allDone = Object.values(room.players).every(p => p.done)
-  const othersDone = Object.entries(room.players).filter(([id]) => id !== userId).every(([, p]) => p.done)
   const waitingCount = Object.values(room.players).filter(p => !p.done).length
 
   // ─── Lobby ────────────────────────────────────────────────────────────────
