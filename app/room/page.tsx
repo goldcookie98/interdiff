@@ -488,8 +488,9 @@ function RoomView({ code }: { code: string }) {
         const data = snap.data() as RoomDoc
 
         // Backfill missing settings fields (for rooms created before these features)
-        if (!data.settings.questionType && (data.settings as any).mode) {
-          data.settings.questionType = (data.settings as any).mode
+        const legacySettings = data.settings as Record<string, unknown>
+        if (!data.settings.questionType && legacySettings.mode) {
+          data.settings.questionType = legacySettings.mode as QuestionMode
         }
         if (!data.settings.questionType) data.settings.questionType = 'both'
         if (!data.settings.teamMode) data.settings.teamMode = 'ffa'
