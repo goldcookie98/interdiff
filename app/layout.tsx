@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import UsernameModal from '@/components/UsernameModal'
+import DankMode from '@/components/DankMode'
 
 export const metadata: Metadata = {
   title: 'InterDiff — Calculus Practice',
