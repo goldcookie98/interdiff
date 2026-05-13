@@ -218,7 +218,7 @@ function DetailedResults({ players, questions, userId, teamMode }: {
               </div>
             </>
           ) : (
-            <div className="font-serif text-2xl font-bold text-cream">It's a Tie!</div>
+            <div className="font-serif text-2xl font-bold text-cream">{"It's a Tie!"}</div>
           )}
           <div className="flex justify-center gap-10 mt-3">
             <div className="text-center">
